@@ -6,6 +6,7 @@
 #include "provariquadro.h"
 #include <QtGui>
 #include <QtCore>
+#include "provapopup.h"
 
 namespace Ui
 {
@@ -29,6 +30,7 @@ private:
     bool is_drawing;
     QGraphicsScene *scene;
     QTimer* timer;
+    ProvaPopup* popup;
 public:
     explicit prova_widget(QWidget* parent = 0);
     ~prova_widget();

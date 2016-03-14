@@ -26,6 +26,12 @@ prova_widget::~prova_widget(){
 }
 void prova_widget::Layer_1_press_event()
 {
+    popup = new ProvaPopup();
+    popup->exec();
+    popup->activateWindow();
+    
+    
+    
     std::cout<<"layer 1 press event triggered"<<std::endl;
      ProvaRiquadro *temp= new ProvaRiquadro();
      scene->addItem(temp);
@@ -68,20 +74,18 @@ void prova_widget::component_clicked()
         {
             is_drawing = false;
             scene->removeItem(curr_line_item);
-            QPointF starting_point = new QPointF(starting_object->x()+starting_object->boundingRect().center().x(),
+            QPointF* starting_point = new QPointF(starting_object->x()+starting_object->boundingRect().center().x(),
                                                  starting_object->y()+starting_object->boundingRect().bottom());
-            QPointF arrival_point = new QPointF (item->x()+item->boundingRect().center().x(),
+            QPointF* arrival_point = new QPointF (item->x()+item->boundingRect().center().x(),
                                                  item->y()+item->boundingRect().bottom());
-            QLineF newline(starting_point,arrival_point);
+            QLineF newline(*starting_point,*arrival_point);
             curr_line_item = scene->addLine(newline,blackpen);
-            starting_object->arriving_points.push_back(arrival_point);
-            item->starting_points.push_back(starting_point);
-            starting_object->to_delete_lines.push_back(curr_line_item);
-            item->to_delete_lines.push_back(curr_line_item);
+            starting_object->arriving_lines.insert(std::make_pair(item,curr_line_item));
+            item->starting_lines.insert(std::make_pair(starting_object,curr_line_item));
             
             
             
-            
+            starting_object = 0;
             item = 0;
         }
         else
