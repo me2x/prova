@@ -12,12 +12,14 @@ class ProvaRiquadro : public QObject, public QGraphicsItem
 public:
     ProvaRiquadro();
     QRectF boundingRect() const;
+    QGraphicsTextItem * text;
     virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget = 0);
     std::map<ProvaRiquadro*, QGraphicsLineItem*> starting_lines,arriving_lines; //stores the points where the arriving lines start (starting_points), and where the starting lines arrive (arriving_points)
 signals:
     void riquadroCliccatoSx();
     void riquadroCliccatoDx();
     void riquadroMosso();
+    void riquadroDoubleClick();
 protected:
     
     virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event);

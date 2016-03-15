@@ -22,6 +22,9 @@ public slots:
     void redraw_line();
     void break_line_drawing();
     void mousePressEvent(QMouseEvent * e);
+    void create_L1_obj();
+    void no_data();
+    void update_L1_object();
 private:
    // std::list<ProvaRiquadro*> layer_1_buttons;
     ProvaRiquadro* starting_object; 

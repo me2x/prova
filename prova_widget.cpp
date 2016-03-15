@@ -27,17 +27,34 @@ prova_widget::~prova_widget(){
 void prova_widget::Layer_1_press_event()
 {
     popup = new ProvaPopup();
+      
+    connect(popup,SIGNAL(accepted()),this,SLOT(create_L1_obj()));
+    connect(popup,SIGNAL(rejected()),this,SLOT(no_data()));
+    
     popup->exec();
     popup->activateWindow();
-    
-    
-    
+  
     std::cout<<"layer 1 press event triggered"<<std::endl;
+}
+
+void prova_widget::no_data()
+{
+    std::cout <<"no data provided in the popup"<<std::endl;
+}
+
+
+void prova_widget::create_L1_obj()
+{
+
+     L4_Data* data = popup->get_data();
+     std::cout<<data->name<<std::endl;
      ProvaRiquadro *temp= new ProvaRiquadro();
      scene->addItem(temp);
      connect(temp,SIGNAL(riquadroCliccatoSx()),this,SLOT(component_clicked()));
      connect(temp,SIGNAL(riquadroMosso()),this,SLOT(break_line_drawing()));
      connect(temp,SIGNAL(riquadroCliccatoDx()),this,SLOT(break_line_drawing()));
+     connect(temp,SIGNAL(riquadroDoubleClick()),this,SLOT(update_L1_object()));
+     
      std::cout<<scene->parent()->objectName().toStdString()<<std::endl;
      
      std::cout<<ui->graphicsView->parentWidget()->objectName().toStdString()<<std::endl;
@@ -68,6 +85,14 @@ void prova_widget::component_clicked()
     //che poi la domanda fondamentale è sono 3 qua e x altrove? xk in tal caso il fix non  funziona...
        // QPoint p = ui->frame_6->mapFromGlobal(QCursor::pos());
     QPen blackpen = QPen(Qt::black);
+    if (item->type() == 8) //qtextgraphicitem
+    {
+        QList<QGraphicsItem*> items;
+        QPointF point = QPointF(p.x()-3, p.y()-3);
+        items = scene->items(point, Qt::IntersectsItemShape,Qt::AscendingOrder,QTransform());
+        std::cout<<items.size()<<std::endl;
+        item = (ProvaRiquadro*) items.at(items.size()-2);
+    }
     if (item->type() == QGraphicsItem::UserType)
     {
         if(is_drawing)
@@ -111,7 +136,10 @@ void prova_widget::component_clicked()
          //   std::cout<<"crash test: else exit"<<std::endl;
         }
     }
-    else
+    else if (item->type() == 8)
+        std::cout << " other type, value is text"<<std::endl;
+        
+    else 
         std::cout << " other type, value is: " << item->type()<<std::endl;
 }
 
@@ -150,5 +178,16 @@ void prova_widget::mousePressEvent(QMouseEvent* e)
     //QWidget::mousePressEvent(e);
     if (e->button() == Qt::RightButton)
         break_line_drawing();
+}
+void prova_widget::update_L1_object()
+{ 
+  popup = new ProvaPopup();
+    popup->  
+    connect(popup,SIGNAL(accepted()),this,SLOT(update_object()));
+    connect(popup,SIGNAL(rejected()),this,SLOT(no_data()));
+    
+    popup->exec();
+    popup->activateWindow();
+    starting_object->text->setPlainText("modded");
 }
 

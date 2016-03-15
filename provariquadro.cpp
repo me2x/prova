@@ -5,12 +5,17 @@
 #include <QCursor>
 ProvaRiquadro::ProvaRiquadro()
 {
-   setFlag(ItemIsMovable);
+    setFlag(ItemIsMovable);
+    text = new QGraphicsTextItem(this);
+    //->text->setTextInteractionFlags(Qt::TextEditorInteraction);
+    text->setPos(5,5);
+    text->setPlainText("Test");
    
 }
 void ProvaRiquadro::mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event)
 {
     std::cout << "mouseDoubleClickEvent"<<std::endl;
+    emit riquadroDoubleClick();
     QGraphicsItem::mouseDoubleClickEvent(event);
 }
 void ProvaRiquadro::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
@@ -96,5 +101,5 @@ std::cout<<"("<<location.x() << "," << location.y()<<")"<<std::endl;
 }
 QRectF ProvaRiquadro::boundingRect() const
 {
-return QRect (0,0,20,20);
+return QRect (0,0,60,30);
 }
