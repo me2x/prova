@@ -14,7 +14,7 @@ prova_widget::prova_widget(QWidget* parent): QWidget(parent), ui(new Ui::prova_w
     scene->setParent(ui->graphicsView);
     is_drawing = false;
     starting_object = 0;
-    
+    doubleclick = false;
     
     
     timer = new QTimer(this);
@@ -54,7 +54,7 @@ void prova_widget::create_L1_obj()
      connect(temp,SIGNAL(riquadroMosso()),this,SLOT(break_line_drawing()));
      connect(temp,SIGNAL(riquadroCliccatoDx()),this,SLOT(break_line_drawing()));
      connect(temp,SIGNAL(riquadroDoubleClick()),this,SLOT(update_L1_object()));
-     
+     temp->text->setPlainText(QString::fromStdString(data->name));
      std::cout<<scene->parent()->objectName().toStdString()<<std::endl;
      
      std::cout<<ui->graphicsView->parentWidget()->objectName().toStdString()<<std::endl;
@@ -77,70 +77,79 @@ void prova_widget::create_L1_obj()
 
 void prova_widget::component_clicked()
 {
-    std::cout<<"component_clicked"<<std::endl;
-    QPoint p1 = QCursor::pos();
-    QPoint p2 = ui->graphicsView->mapFromGlobal(p1);
-    QPointF p = ui->graphicsView->mapToScene(p2);
-    ProvaRiquadro* item =  (ProvaRiquadro*) scene->itemAt(p.x()-3, p.y()-3); //NON HO ANCORA CAPITO XK SI PERDA 3px nella conversione. 
-    //che poi la domanda fondamentale è sono 3 qua e x altrove? xk in tal caso il fix non  funziona...
-       // QPoint p = ui->frame_6->mapFromGlobal(QCursor::pos());
-    QPen blackpen = QPen(Qt::black);
-    if (item->type() == 8) //qtextgraphicitem
+    if (!doubleclick)
     {
-        QList<QGraphicsItem*> items;
-        QPointF point = QPointF(p.x()-3, p.y()-3);
-        items = scene->items(point, Qt::IntersectsItemShape,Qt::AscendingOrder,QTransform());
-        std::cout<<items.size()<<std::endl;
-        item = (ProvaRiquadro*) items.at(items.size()-2);
-    }
-    if (item->type() == QGraphicsItem::UserType)
-    {
-        if(is_drawing)
+        std::cout<<"component_clicked"<<std::endl;
+        QPoint p1 = QCursor::pos();
+        QPoint p2 = ui->graphicsView->mapFromGlobal(p1);
+        QPointF p = ui->graphicsView->mapToScene(p2);
+        ProvaRiquadro* item =  (ProvaRiquadro*) scene->itemAt(p.x()-3, p.y()-3); //NON HO ANCORA CAPITO XK SI PERDA 3px nella conversione. 
+        //che poi la domanda fondamentale è sono 3 qua e x altrove? xk in tal caso il fix non  funziona...
+        // QPoint p = ui->frame_6->mapFromGlobal(QCursor::pos());
+        std::cout<<"item catched"<<std::endl;
+        std::cout<<"item catched"<<item->type() <<std::endl;
+        std::cout<<"item catched"<<std::endl;
+        QPen blackpen = QPen(Qt::black);
+        if (item->type() == 8) //qtextgraphicitem
         {
-            is_drawing = false;
-            scene->removeItem(curr_line_item);
-            QPointF* starting_point = new QPointF(starting_object->x()+starting_object->boundingRect().center().x(),
-                                                 starting_object->y()+starting_object->boundingRect().bottom());
-            QPointF* arrival_point = new QPointF (item->x()+item->boundingRect().center().x(),
-                                                 item->y()+item->boundingRect().bottom());
-            QLineF newline(*starting_point,*arrival_point);
-            curr_line_item = scene->addLine(newline,blackpen);
-            starting_object->arriving_lines.insert(std::make_pair(item,curr_line_item));
-            item->starting_lines.insert(std::make_pair(starting_object,curr_line_item));
-            
-            
-            
-            starting_object = 0;
-            item = 0;
+            std::cout<<"item is text"<<std::endl;
+            QList<QGraphicsItem*> items;
+            QPointF point = QPointF(p.x()-3, p.y()-3);
+            items = scene->items(point, Qt::IntersectsItemShape,Qt::AscendingOrder,QTransform());
+            std::cout<<items.size()<<std::endl;
+            item = (ProvaRiquadro*) items.at(items.size()-2);
         }
-        else
+        if (item->type() == QGraphicsItem::UserType)
         {
+            if(is_drawing)
+            {
+                is_drawing = false;
+                scene->removeItem(curr_line_item);
+                QPointF* starting_point = new QPointF(starting_object->x()+starting_object->boundingRect().center().x(),
+                                                    starting_object->y()+starting_object->boundingRect().bottom());
+                QPointF* arrival_point = new QPointF (item->x()+item->boundingRect().center().x(),
+                                                    item->y()+item->boundingRect().bottom());
+                QLineF newline(*starting_point,*arrival_point);
+                curr_line_item = scene->addLine(newline,blackpen);
+                starting_object->arriving_lines.insert(std::make_pair(item,curr_line_item));
+                item->starting_lines.insert(std::make_pair(starting_object,curr_line_item));
+                
+                
+                
+                starting_object = 0;
+                item = 0;
+            }
+            else
+            {
+                
+                //start
+                std::cout<<"crash test: else init"<<std::endl;
+                
+                is_drawing = true;
+                std::cout<<"crash test: set true"<<std::endl;
+                starting_object = item;
+                std::cout<<"crash test: set start point"<<std::endl;
+                QPoint p1 = QCursor::pos();
+                QPoint p2 = ui->graphicsView->mapFromGlobal(p1);
+                QPointF p = ui->graphicsView->mapToScene(p2);
+                std::cout<<"crash test: get p"<<p.x()<<std::endl;
+                std::cout<<"crash test: item is"<< item->objectName().toStdString()<<std::endl; //crasha se riprende la linea
+                QLineF newline(item->x()+item->boundingRect().center().x(),item->y()+item->boundingRect().bottom(),p.x()-3, p.y()-3);
+            std::cout<<"crash test: draw line"<<std::endl;
+                curr_line_item = scene->addLine(newline,blackpen);
+                std::cout<<"crash test: drawn line"<<std::endl;
             
-            //start
-            //std::cout<<"crash test: else init"<<std::endl;
-            
-            is_drawing = true;
-           // std::cout<<"crash test: set true"<<std::endl;
-            starting_object = item;
-           // std::cout<<"crash test: set start point"<<std::endl;
-            QPoint p1 = QCursor::pos();
-            QPoint p2 = ui->graphicsView->mapFromGlobal(p1);
-            QPointF p = ui->graphicsView->mapToScene(p2);
-         //   std::cout<<"crash test: get p"<<p.x()<<std::endl;
-         //   std::cout<<"crash test: item is"<< item->objectName().toStdString()<<std::endl; //crasha se riprende la linea
-            QLineF newline(item->x()+item->boundingRect().center().x(),item->y()+item->boundingRect().bottom(),p.x()-3, p.y()-3);
-         //   std::cout<<"crash test: draw line"<<std::endl;
-            curr_line_item = scene->addLine(newline,blackpen);
-         //   std::cout<<"crash test: drawn line"<<std::endl;
-           
-         //   std::cout<<"crash test: else exit"<<std::endl;
+                std::cout<<"crash test: else exit"<<std::endl;
+            }
         }
+        else if (item->type() == 8)
+            std::cout << " other type, value is text"<<std::endl;
+            
+        else 
+            std::cout << " other type, value is: " << item->type()<<std::endl;
     }
-    else if (item->type() == 8)
-        std::cout << " other type, value is text"<<std::endl;
-        
-    else 
-        std::cout << " other type, value is: " << item->type()<<std::endl;
+    else
+        doubleclick = false;
 }
 
 
@@ -181,13 +190,36 @@ void prova_widget::mousePressEvent(QMouseEvent* e)
 }
 void prova_widget::update_L1_object()
 { 
-  popup = new ProvaPopup();
-    popup->  
-    connect(popup,SIGNAL(accepted()),this,SLOT(update_object()));
-    connect(popup,SIGNAL(rejected()),this,SLOT(no_data()));
+        if (is_drawing)
+        {
+            scene->removeItem(curr_line_item);
+            //starting_object = 0;
+            is_drawing = false;
+            
+            popup = new ProvaPopup();
+            
+            connect(popup,SIGNAL(accepted()),this,SLOT(update_object()));
+            connect(popup,SIGNAL(rejected()),this,SLOT(no_data()));
+            
+            popup->exec();
+            popup->activateWindow();
+            //starting_object->text->setPlainText("modded");
+            doubleclick = true;
+        }
+        else
+        {
+            std::cout<< "starting object not retrieved"<<std::endl;
+        }
+                
+
     
-    popup->exec();
-    popup->activateWindow();
-    starting_object->text->setPlainText("modded");
 }
 
+void prova_widget::update_object(){
+
+    std::cout <<"entra in update"<<std::endl;
+    L4_Data* data = popup->get_data();
+    std::cout <<"data retrieved"<<std::endl;
+    starting_object->text->setPlainText(QString::fromStdString(data->name));
+    std::cout<<"update finished"<<std::endl;
+}

@@ -4,9 +4,8 @@
 ProvaPopup::ProvaPopup(QDialog* parent): QDialog(parent), ui(new Ui::ProvaPopup)
 {
     ui->setupUi(this);
-//    connect(ui->pushButton_6,SIGNAL(clicked()),this,SLOT(Layer_1_press_event()));
-    connect(ui->pushButton, SIGNAL(clicked()), this, SLOT(accept()));
-    connect(ui->pushButton_2, SIGNAL(clicked()), this, SLOT(reject()));
+    connect(ui->pushButton_2, SIGNAL(clicked()), this, SLOT(accept()));
+    connect(ui->pushButton, SIGNAL(clicked()), this, SLOT(reject()));
     data.name = "";
 }
 
@@ -30,6 +29,7 @@ void ProvaPopup::accept()
 {
     QString text = ui->lineEdit->text();
     data.name = text.toStdString();
+    //TODO controllo name non sia gia in uso
     if (data.name != ""){
         std::cout <<"name accepted"<<std::endl;
         QDialog::accept();

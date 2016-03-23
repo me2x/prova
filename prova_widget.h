@@ -25,6 +25,7 @@ public slots:
     void create_L1_obj();
     void no_data();
     void update_L1_object();
+    void update_object();
 private:
    // std::list<ProvaRiquadro*> layer_1_buttons;
     ProvaRiquadro* starting_object; 
@@ -34,6 +35,7 @@ private:
     QGraphicsScene *scene;
     QTimer* timer;
     ProvaPopup* popup;
+    bool doubleclick;
 public:
     explicit prova_widget(QWidget* parent = 0);
     ~prova_widget();
