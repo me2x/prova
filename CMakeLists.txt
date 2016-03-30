@@ -11,7 +11,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 
-set(provaGui_SRCS test.cpp scene.cpp provapopup.cpp provaGui.cpp main.cpp prova_widget.cpp provariquadro.cpp)
+set(provaGui_SRCS test.cpp scene.cpp provapopup.cpp provaGui.cpp main.cpp prova_widget.cpp provariquadro.cpp handleitem.cpp)
 
 #qt4_automoc(${provaGui_SRCS})
 

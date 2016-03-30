@@ -2,6 +2,7 @@
 #include "ui_prova_widget.h"
 #include <iostream>
 #include <boost/lexical_cast.hpp>
+#include <boost/math/constants/constants.hpp>
 #include <QTimer>
 prova_widget::prova_widget(QWidget* parent): QWidget(parent), ui(new Ui::prova_widget)
 {
@@ -54,6 +55,7 @@ void prova_widget::create_L1_obj()
      connect(temp,SIGNAL(riquadroMosso()),this,SLOT(break_line_drawing()));
      connect(temp,SIGNAL(riquadroCliccatoDx()),this,SLOT(break_line_drawing()));
      connect(temp,SIGNAL(riquadroDoubleClick()),this,SLOT(update_L1_object()));
+     connect(scene,SIGNAL(selectionChanged()),temp,SLOT(provaselected()));
      temp->text->setPlainText(QString::fromStdString(data->name));
      std::cout<<scene->parent()->objectName().toStdString()<<std::endl;
      
@@ -77,8 +79,8 @@ void prova_widget::create_L1_obj()
 
 void prova_widget::component_clicked()
 {
-    if (!doubleclick)
-    {
+    //if (!doubleclick)
+    //{
         std::cout<<"component_clicked"<<std::endl;
         QPoint p1 = QCursor::pos();
         QPoint p2 = ui->graphicsView->mapFromGlobal(p1);
@@ -105,41 +107,69 @@ void prova_widget::component_clicked()
             {
                 is_drawing = false;
                 scene->removeItem(curr_line_item);
-                QPointF* starting_point = new QPointF(starting_object->x()+starting_object->boundingRect().center().x(),
-                                                    starting_object->y()+starting_object->boundingRect().bottom());
-                QPointF* arrival_point = new QPointF (item->x()+item->boundingRect().center().x(),
-                                                    item->y()+item->boundingRect().bottom());
-                QLineF newline(*starting_point,*arrival_point);
-                curr_line_item = scene->addLine(newline,blackpen);
-                starting_object->arriving_lines.insert(std::make_pair(item,curr_line_item));
-                item->starting_lines.insert(std::make_pair(starting_object,curr_line_item));
+                if(item->starting_lines.count(starting_object)==0)
+                {
+                    QPointF* starting_point = new QPointF(starting_object->x()+starting_object->boundingRect().center().x(),
+                                                        starting_object->y()+starting_object->boundingRect().bottom());
+                    QPointF* arrival_point = new QPointF (item->x()+item->boundingRect().center().x(),
+                                                        item->y()+item->boundingRect().top());
+                    QLineF newline(*arrival_point,*starting_point);
+                    curr_line_item = scene->addLine(newline,blackpen);
                 
-                
-                
-                starting_object = 0;
-                item = 0;
+                    starting_object->arriving_lines.insert(std::make_pair(item,curr_line_item));
+                    item->starting_lines.insert(std::make_pair(starting_object,curr_line_item));
+                    
+                    double angle = ::acos(newline.dx() / newline.length());
+            
+                    if (newline.dy() >= 0)
+                        angle = (boost::math::constants::pi<double>() * 2) - angle;
+
+                    QPointF arrowP1 = newline.p1() + QPointF(sin(angle + boost::math::constants::pi<double>() / 3) * 10,
+                                                    cos(angle + boost::math::constants::pi<double>() / 3) * 10);
+                    QPointF arrowP2 = newline.p1() + QPointF(sin(angle + boost::math::constants::pi<double>() - boost::math::constants::pi<double>() / 3) * 10,
+                                                    cos(angle + boost::math::constants::pi<double>() - boost::math::constants::pi<double>() / 3) * 10);
+
+                    QLineF arrow_L1(*arrival_point,arrowP1);
+                std::cout<<"crash test: draw line"<<std::endl;
+                    
+                    scene->addLine(arrow_L1,blackpen);
+                    
+                    QLineF arrow_L2(*arrival_point,arrowP2);
+                std::cout<<"crash test: draw line"<<std::endl;
+                    
+                    scene->addLine(arrow_L2,blackpen);
+                    starting_object->setSelected(false);
+                    item->setSelected(false);
+                    starting_object = 0;
+                    item = 0;
+                    }
+                    
+                    
+                    std::cerr<<"selecteditemscleardone"<<scene->selectedItems().size()<<std::endl;
             }
             else
             {
                 
                 //start
-                std::cout<<"crash test: else init"<<std::endl;
+               // std::cout<<"crash test: else init"<<std::endl;
                 
                 is_drawing = true;
-                std::cout<<"crash test: set true"<<std::endl;
+              //  std::cout<<"crash test: set true"<<std::endl;
                 starting_object = item;
-                std::cout<<"crash test: set start point"<<std::endl;
+               // std::cout<<"crash test: set start point"<<std::endl;
                 QPoint p1 = QCursor::pos();
                 QPoint p2 = ui->graphicsView->mapFromGlobal(p1);
                 QPointF p = ui->graphicsView->mapToScene(p2);
-                std::cout<<"crash test: get p"<<p.x()<<std::endl;
-                std::cout<<"crash test: item is"<< item->objectName().toStdString()<<std::endl; //crasha se riprende la linea
+              //  std::cout<<"crash test: get p"<<p.x()<<std::endl;
+              //  std::cout<<"crash test: item is"<< item->objectName().toStdString()<<std::endl; //crasha se riprende la linea
                 QLineF newline(item->x()+item->boundingRect().center().x(),item->y()+item->boundingRect().bottom(),p.x()-3, p.y()-3);
-            std::cout<<"crash test: draw line"<<std::endl;
+            //std::cout<<"crash test: draw line"<<std::endl;
+                
                 curr_line_item = scene->addLine(newline,blackpen);
-                std::cout<<"crash test: drawn line"<<std::endl;
-            
-                std::cout<<"crash test: else exit"<<std::endl;
+                //std::cout<<"crash test: drawn line"<<std::endl;
+              
+                
+               // std::cout<<"crash test: else exit"<<std::endl;
             }
         }
         else if (item->type() == 8)
@@ -147,9 +177,22 @@ void prova_widget::component_clicked()
             
         else 
             std::cout << " other type, value is: " << item->type()<<std::endl;
-    }
-    else
-        doubleclick = false;
+   // }
+    //else
+   //     doubleclick = false;
+   //     std::cerr<<"selected items are: "<<scene->selectedItems().size()<<std::endl;
+   //     foreach(QGraphicsItem* selectedItem, scene->selectedItems())
+   //     { 
+   //         std::cout<<selectedItem->type()<<std::endl;
+   //         if (selectedItem->type() == QGraphicsItem::UserType)
+   //         {
+   //             ProvaRiquadro* tmp = (ProvaRiquadro*)selectedItem;
+    //            std::cout << tmp->text->toPlainText().toStdString()<<std::endl;
+     //           tmp->setSelected(false);
+      //      }
+            // perform action with selectedItem
+      //  }
+      //  std::cerr<<"selected items are: "<<scene->selectedItems().size()<<std::endl;
 }
 
 
@@ -161,7 +204,7 @@ void prova_widget::redraw_line()
    // std::cout<<"inside redraw line" <<std::endl;
     
         QPen blackpen = QPen(Qt::black);
-        std::cout << "curr line != 0" <<std::endl;
+        //std::cout << "curr line != 0" <<std::endl;
         QPoint p1 = QCursor::pos();
         QPoint p2 = ui->graphicsView->mapFromGlobal(p1);
         QPointF p = ui->graphicsView->mapToScene(p2);
@@ -169,6 +212,7 @@ void prova_widget::redraw_line()
         
         QLineF newline(starting_object->x()+starting_object->boundingRect().center().x(),starting_object->y()+starting_object->boundingRect().bottom(),p.x()-3, p.y()-3);
         curr_line_item =  scene->addLine(newline,blackpen);
+       
         //curr_line = &newline;
     
 }
@@ -177,6 +221,8 @@ void prova_widget::break_line_drawing(){
     if (!is_drawing) return;
     
     scene->removeItem(curr_line_item);
+    starting_object->setSelected(false);
+    std::cerr<<"selecteditems size: "<<scene->selectedItems().size()<<std::endl;
     starting_object = 0;
     is_drawing = false;
 }
