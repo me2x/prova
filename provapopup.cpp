@@ -24,6 +24,7 @@ return &data;
 void ProvaPopup::set_data(L4_Data* data_in)
 {
     data = *data_in;
+    ui->lineEdit->setText(QString::fromStdString(data.name));
 }
 void ProvaPopup::accept()
 {

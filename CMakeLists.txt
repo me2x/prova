@@ -9,9 +9,9 @@ include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR})
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++0x")
 
-
-set(provaGui_SRCS test.cpp scene.cpp provapopup.cpp provaGui.cpp main.cpp prova_widget.cpp provariquadro.cpp handleitem.cpp)
+set(provaGui_SRCS test.cpp scene.cpp provapopup.cpp provaGui.cpp main.cpp prova_widget.cpp provariquadro.cpp handleitem.cpp provaporte.cpp arrow.cpp portselect.cpp)
 
 #qt4_automoc(${provaGui_SRCS})
 

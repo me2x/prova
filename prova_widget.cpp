@@ -4,10 +4,12 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <QTimer>
+#include "portselect.h"
 prova_widget::prova_widget(QWidget* parent): QWidget(parent), ui(new Ui::prova_widget)
 {
     ui->setupUi(this);
     connect(ui->pushButton,SIGNAL(clicked()),this,SLOT(Layer_1_press_event()));
+    connect(ui->pushButton_2,SIGNAL(clicked()),this,SLOT(Layer_2_press_event()));
     scene = new QGraphicsScene(this);
     scene->setObjectName("scene");
     ui->graphicsView->setScene(scene);
@@ -15,7 +17,7 @@ prova_widget::prova_widget(QWidget* parent): QWidget(parent), ui(new Ui::prova_w
     scene->setParent(ui->graphicsView);
     is_drawing = false;
     starting_object = 0;
-    doubleclick = false;
+    
     
     
     timer = new QTimer(this);
@@ -27,13 +29,25 @@ prova_widget::~prova_widget(){
 }
 void prova_widget::Layer_1_press_event()
 {
-    popup = new ProvaPopup();
+    popup.reset(new ProvaPopup());
       
-    connect(popup,SIGNAL(accepted()),this,SLOT(create_L1_obj()));
-    connect(popup,SIGNAL(rejected()),this,SLOT(no_data()));
+    connect(popup.get(),SIGNAL(accepted()),this,SLOT(create_L1_obj()));
+    connect(popup.get(),SIGNAL(rejected()),this,SLOT(no_data()));
     
     popup->exec();
     popup->activateWindow();
+  
+    std::cout<<"layer 1 press event triggered"<<std::endl;
+}
+void prova_widget::Layer_2_press_event()
+{
+porte.reset(new ProvaPorte());
+      
+    connect(porte.get(),SIGNAL(accepted()),this,SLOT(create_L2_obj()));
+    connect(porte.get(),SIGNAL(rejected()),this,SLOT(no_data()));
+    
+    porte->exec();
+    porte->activateWindow();
   
     std::cout<<"layer 1 press event triggered"<<std::endl;
 }
@@ -46,10 +60,14 @@ void prova_widget::no_data()
 
 void prova_widget::create_L1_obj()
 {
-
+//dato che non fa la new, quando faccio reset di popup elimina il precedente e quindi segfaulta.
+//risolvere con smartptr, nel momento in cui si perfeziona il tutto. ora puoi sbattertene le palle :D
+//e procedere domattina con l'elimina
+    
      L4_Data* data = popup->get_data();
      std::cout<<data->name<<std::endl;
      ProvaRiquadro *temp= new ProvaRiquadro();
+     temp->setLayer(0);
      scene->addItem(temp);
      connect(temp,SIGNAL(riquadroCliccatoSx()),this,SLOT(component_clicked()));
      connect(temp,SIGNAL(riquadroMosso()),this,SLOT(break_line_drawing()));
@@ -57,6 +75,7 @@ void prova_widget::create_L1_obj()
      connect(temp,SIGNAL(riquadroDoubleClick()),this,SLOT(update_L1_object()));
      connect(scene,SIGNAL(selectionChanged()),temp,SLOT(provaselected()));
      temp->text->setPlainText(QString::fromStdString(data->name));
+     graphical_to_data.insert(std::make_pair(temp,data));
      std::cout<<scene->parent()->objectName().toStdString()<<std::endl;
      
      std::cout<<ui->graphicsView->parentWidget()->objectName().toStdString()<<std::endl;
@@ -76,32 +95,55 @@ void prova_widget::create_L1_obj()
   //update();
   
 }
+void prova_widget::create_L2_obj() //NTS sono praticamente uguali se non fosse per l'updateL2. e il fatto che usa un qdialog diverso. se anche update L2 resta simile prova a pensare funzione univoca.
+{
+
+     L4_Data* data = porte->get_data();
+     std::cout<<data->name<<std::endl;
+     ProvaRiquadro *temp= new ProvaRiquadro();
+     temp->setLayer(1);
+     scene->addItem(temp);
+     connect(temp,SIGNAL(riquadroCliccatoSx()),this,SLOT(component_clicked()));
+     connect(temp,SIGNAL(riquadroMosso()),this,SLOT(break_line_drawing()));
+     connect(temp,SIGNAL(riquadroCliccatoDx()),this,SLOT(break_line_drawing()));
+     connect(temp,SIGNAL(riquadroDoubleClick()),this,SLOT(update_L2_object()));
+     connect(scene,SIGNAL(selectionChanged()),temp,SLOT(provaselected()));
+     temp->text->setPlainText(QString::fromStdString(data->name));
+     graphical_to_data.insert(std::make_pair(temp,data));
+     std::cout<<scene->parent()->objectName().toStdString()<<std::endl;
+     
+     std::cout<<ui->graphicsView->parentWidget()->objectName().toStdString()<<std::endl;
+     
+     std::cout<<ui->scrollAreaWidgetContents->parentWidget()->objectName().toStdString()<<std::endl;
+}
 
 void prova_widget::component_clicked()
 {
-    //if (!doubleclick)
-    //{
         std::cout<<"component_clicked"<<std::endl;
         QPoint p1 = QCursor::pos();
         QPoint p2 = ui->graphicsView->mapFromGlobal(p1);
         QPointF p = ui->graphicsView->mapToScene(p2);
-        ProvaRiquadro* item =  (ProvaRiquadro*) scene->itemAt(p.x()-3, p.y()-3); //NON HO ANCORA CAPITO XK SI PERDA 3px nella conversione. 
+        QGraphicsItem* item_tmp =  scene->itemAt(p.x()-3, p.y()-3); //NON HO ANCORA CAPITO XK SI PERDA 3px nella conversione. 
         //che poi la domanda fondamentale è sono 3 qua e x altrove? xk in tal caso il fix non  funziona...
         // QPoint p = ui->frame_6->mapFromGlobal(QCursor::pos());
         std::cout<<"item catched"<<std::endl;
-        std::cout<<"item catched"<<item->type() <<std::endl;
+        std::cout<<"item catched"<<item_tmp->type() <<std::endl;
         std::cout<<"item catched"<<std::endl;
         QPen blackpen = QPen(Qt::black);
-        if (item->type() == 8) //qtextgraphicitem
+        
+        while (item_tmp->type() != ProvaRiquadro::ProvaRiquadro_type) //qtextgraphicitem
         {
             std::cout<<"item is text"<<std::endl;
             QList<QGraphicsItem*> items;
             QPointF point = QPointF(p.x()-3, p.y()-3);
             items = scene->items(point, Qt::IntersectsItemShape,Qt::AscendingOrder,QTransform());
             std::cout<<items.size()<<std::endl;
-            item = (ProvaRiquadro*) items.at(items.size()-2);
+            item_tmp = items.at(items.size()-2);
         }
-        if (item->type() == QGraphicsItem::UserType)
+        ProvaRiquadro* item = qgraphicsitem_cast<ProvaRiquadro*>(item_tmp);
+        std::cout<<"item is: "<<item<<std::endl;
+        std::cout<<"item is: "<<item->text->toPlainText().toStdString()<<std::endl;
+        if (item != nullptr && item != 0)
         {
             if(is_drawing)
             {
@@ -109,39 +151,22 @@ void prova_widget::component_clicked()
                 scene->removeItem(curr_line_item);
                 if(item->starting_lines.count(starting_object)==0)
                 {
-                    QPointF* starting_point = new QPointF(starting_object->x()+starting_object->boundingRect().center().x(),
-                                                        starting_object->y()+starting_object->boundingRect().bottom());
-                    QPointF* arrival_point = new QPointF (item->x()+item->boundingRect().center().x(),
-                                                        item->y()+item->boundingRect().top());
-                    QLineF newline(*arrival_point,*starting_point);
-                    curr_line_item = scene->addLine(newline,blackpen);
-                
-                    starting_object->arriving_lines.insert(std::make_pair(item,curr_line_item));
-                    item->starting_lines.insert(std::make_pair(starting_object,curr_line_item));
+                    std::cout<<"test: precall di portselect"<<std::endl;
+                    arrival_object = item;
+                    std::cout<<"arrival set"<<std::endl;
+//                    delete ps;
+                    ps.reset(new PortSelect());
+                    std::cout<<"reset done"<<std::endl;
+                    ps->set_data(graphical_to_data.at(starting_object),graphical_to_data.at(arrival_object));
+                    std::cout<<"data set set"<<std::endl;
+                    connect(ps.get(),SIGNAL(accepted()),this,SLOT(finalize_line()));
+                    connect(ps.get(),SIGNAL(rejected()),this,SLOT(break_line_drawing()));
+                    std::cout<<"connection set"<<std::endl;
+                    ps->exec();
+                    ps->activateWindow();
                     
-                    double angle = ::acos(newline.dx() / newline.length());
-            
-                    if (newline.dy() >= 0)
-                        angle = (boost::math::constants::pi<double>() * 2) - angle;
-
-                    QPointF arrowP1 = newline.p1() + QPointF(sin(angle + boost::math::constants::pi<double>() / 3) * 10,
-                                                    cos(angle + boost::math::constants::pi<double>() / 3) * 10);
-                    QPointF arrowP2 = newline.p1() + QPointF(sin(angle + boost::math::constants::pi<double>() - boost::math::constants::pi<double>() / 3) * 10,
-                                                    cos(angle + boost::math::constants::pi<double>() - boost::math::constants::pi<double>() / 3) * 10);
-
-                    QLineF arrow_L1(*arrival_point,arrowP1);
-                std::cout<<"crash test: draw line"<<std::endl;
-                    
-                    scene->addLine(arrow_L1,blackpen);
-                    
-                    QLineF arrow_L2(*arrival_point,arrowP2);
-                std::cout<<"crash test: draw line"<<std::endl;
-                    
-                    scene->addLine(arrow_L2,blackpen);
-                    starting_object->setSelected(false);
-                    item->setSelected(false);
-                    starting_object = 0;
-                    item = 0;
+                   std::cout<<"test: postcall di portselect"<<std::endl;
+                   
                     }
                     
                     
@@ -149,50 +174,18 @@ void prova_widget::component_clicked()
             }
             else
             {
-                
-                //start
-               // std::cout<<"crash test: else init"<<std::endl;
-                
                 is_drawing = true;
-              //  std::cout<<"crash test: set true"<<std::endl;
                 starting_object = item;
-               // std::cout<<"crash test: set start point"<<std::endl;
                 QPoint p1 = QCursor::pos();
                 QPoint p2 = ui->graphicsView->mapFromGlobal(p1);
                 QPointF p = ui->graphicsView->mapToScene(p2);
-              //  std::cout<<"crash test: get p"<<p.x()<<std::endl;
-              //  std::cout<<"crash test: item is"<< item->objectName().toStdString()<<std::endl; //crasha se riprende la linea
                 QLineF newline(item->x()+item->boundingRect().center().x(),item->y()+item->boundingRect().bottom(),p.x()-3, p.y()-3);
-            //std::cout<<"crash test: draw line"<<std::endl;
-                
                 curr_line_item = scene->addLine(newline,blackpen);
-                //std::cout<<"crash test: drawn line"<<std::endl;
-              
-                
-               // std::cout<<"crash test: else exit"<<std::endl;
-            }
+              }
         }
-        else if (item->type() == 8)
-            std::cout << " other type, value is text"<<std::endl;
-            
         else 
-            std::cout << " other type, value is: " << item->type()<<std::endl;
-   // }
-    //else
-   //     doubleclick = false;
-   //     std::cerr<<"selected items are: "<<scene->selectedItems().size()<<std::endl;
-   //     foreach(QGraphicsItem* selectedItem, scene->selectedItems())
-   //     { 
-   //         std::cout<<selectedItem->type()<<std::endl;
-   //         if (selectedItem->type() == QGraphicsItem::UserType)
-   //         {
-   //             ProvaRiquadro* tmp = (ProvaRiquadro*)selectedItem;
-    //            std::cout << tmp->text->toPlainText().toStdString()<<std::endl;
-     //           tmp->setSelected(false);
-      //      }
-            // perform action with selectedItem
-      //  }
-      //  std::cerr<<"selected items are: "<<scene->selectedItems().size()<<std::endl;
+            std::cout << " other type, value is: " << item_tmp->type()<<std::endl;
+
 }
 
 
@@ -233,6 +226,19 @@ void prova_widget::mousePressEvent(QMouseEvent* e)
     //QWidget::mousePressEvent(e);
     if (e->button() == Qt::RightButton)
         break_line_drawing();
+    else
+    {
+        QPoint globpos = e->globalPos();
+        QPoint p2 = ui->graphicsView->mapFromGlobal(globpos);
+        QPointF p3 = ui->graphicsView->mapToScene(p2);
+        QRectF rect = QRectF(p3.x()-25,p3.y()-25,50,50);
+        QList<QGraphicsItem*> list =  scene->items(rect);
+        std::cout<<"list size is: "<<list.size()<<std::endl;
+        for (QList<QGraphicsItem*>::iterator it = list.begin(); it != list.end();++it)
+        {
+            std::cout<< "type is:" << (*it)->type()<<std::endl;
+        }
+    }
 }
 void prova_widget::update_L1_object()
 { 
@@ -242,15 +248,42 @@ void prova_widget::update_L1_object()
             //starting_object = 0;
             is_drawing = false;
             
-            popup = new ProvaPopup();
+            popup.reset(new ProvaPopup());
             
-            connect(popup,SIGNAL(accepted()),this,SLOT(update_object()));
-            connect(popup,SIGNAL(rejected()),this,SLOT(no_data()));
-            
+            connect(popup.get(),SIGNAL(accepted()),this,SLOT(update_object()));
+            connect(popup.get(),SIGNAL(rejected()),this,SLOT(no_data()));
+            popup->set_data(graphical_to_data.at(starting_object));
             popup->exec();
             popup->activateWindow();
             //starting_object->text->setPlainText("modded");
-            doubleclick = true;
+            
+        }
+        else
+        {
+            std::cout<< "starting object not retrieved"<<std::endl;
+        }
+                
+
+    
+}
+
+void prova_widget::update_L2_object()
+{ 
+        if (is_drawing)
+        {
+            scene->removeItem(curr_line_item);
+            //starting_object = 0;
+            is_drawing = false;
+            
+            porte.reset(new ProvaPorte());
+            
+            connect(porte.get(),SIGNAL(accepted()),this,SLOT(update_object2()));
+            connect(porte.get(),SIGNAL(rejected()),this,SLOT(no_data()));
+            porte->set_data(graphical_to_data.at(starting_object));
+            porte->exec();
+            porte->activateWindow();
+            //starting_object->text->setPlainText("modded");
+            
         }
         else
         {
@@ -268,4 +301,23 @@ void prova_widget::update_object(){
     std::cout <<"data retrieved"<<std::endl;
     starting_object->text->setPlainText(QString::fromStdString(data->name));
     std::cout<<"update finished"<<std::endl;
+}
+void prova_widget::update_object2(){
+
+    std::cout <<"entra in update"<<std::endl;
+    L4_Data* data = porte->get_data();
+    std::cout <<"data retrieved"<<std::endl;
+    starting_object->text->setPlainText(QString::fromStdString(data->name));
+    std::cout<<"update finished"<<std::endl;
+}
+
+void prova_widget::finalize_line(){
+     std::pair<int,int> ports = ps->get_ports();
+     Arrow* a =new Arrow(starting_object,arrival_object,ports.first,ports.second);
+     arrows.push_back(a); 
+     starting_object->setSelected(false);
+     arrival_object->setArrowTarget();
+     starting_object = 0;
+     arrival_object->setSelected(false);
+     arrival_object = 0;
 }

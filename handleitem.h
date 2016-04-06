@@ -8,8 +8,9 @@ class HandleItem;
  
 class HandleItem : public QGraphicsItem
 {
+    
 public:
- 
+  enum { Handler_Type = UserType + 2 };
   enum HandleRole
   {
     CenterHandle,
@@ -18,7 +19,10 @@ public:
     LeftHandle,
     BottomHandle
   };
- 
+  int type() const
+  {// Enable the use of qgraphicsitem_cast with this item.
+     return Handler_Type;
+  }
   HandleItem( ProvaRiquadro *item, QGraphicsScene *scene, QColor color, HandleRole role = CenterHandle, QList<HandleItem*> handles = QList<HandleItem*>() );
  
   void paint( QPainter *paint, const QStyleOptionGraphicsItem *option, QWidget *widget );

@@ -5,6 +5,7 @@
 #include <QCursor>
 #include <qitemselectionmodel.h>
 #include "handleitem.h"
+
 ProvaRiquadro::ProvaRiquadro()
 {
     setFlag(ItemIsMovable);
@@ -14,6 +15,8 @@ ProvaRiquadro::ProvaRiquadro()
     text->setPos(5,5);
     text->setPlainText("Test");
     rekt = QRect (0,0,60,30);
+    brush = QBrush(Qt::gray);
+    arrow_target = false;
  //   this->scene()->addItem(topHandle);
     //QItemSelectionModel::selectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
    
@@ -31,45 +34,11 @@ void ProvaRiquadro::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
     being_moved=true;
     std::cout << "mousemoveEvent"<<std::endl;
     std::cerr<<"selected items are: "<<this->scene()->selectedItems().size()<<std::endl;
+    erase_lines();
     event->accept();
     QGraphicsItem::mouseMoveEvent(event);
     //std::cout <<"bugseeker"<<std::endl;
-    QPen blackpen = QPen(Qt::black);
-    for (std::map<ProvaRiquadro*,QGraphicsLineItem*>::iterator it = arriving_lines.begin(); it!= arriving_lines.end();++it)
-    {
-        //draw new line.
-        std::cout <<"bugseeker2"<<std::endl;
-        ProvaRiquadro* tmp = (*it).first;
-        tmp->scene()->removeItem(tmp->starting_lines.at(this)); //???????
-        QPointF* starting_point = new QPointF(tmp->x()+tmp->boundingRect().center().x(),
-                                             tmp->y()+tmp->boundingRect().bottom());
-        QPointF* arrival_point = new QPointF (this->x()+this->boundingRect().center().x(),
-                                             this->y()+this->boundingRect().bottom());
-        QLineF newline(*starting_point,*arrival_point);
-        QGraphicsLineItem* curr_line_item = this->scene()->addLine(newline,blackpen);
-      
-        
-        this->arriving_lines.at(tmp) = curr_line_item;
-        tmp->starting_lines.at(this) = curr_line_item;
-    }
-    for (std::map<ProvaRiquadro*,QGraphicsLineItem*>::iterator it = starting_lines.begin(); it!= starting_lines.end();++it)
-    {
-        //draw new line.
-        std::cout <<"bugseeker3"<<std::endl;
-        ProvaRiquadro* tmp = (*it).first;
-        tmp->scene()->removeItem(tmp->arriving_lines.at(this)); //???????
-        QPointF* starting_point = new QPointF(tmp->x()+tmp->boundingRect().center().x(),
-                                             tmp->y()+tmp->boundingRect().bottom());
-        QPointF* arrival_point = new QPointF (this->x()+this->boundingRect().center().x(),
-                                             this->y()+this->boundingRect().bottom());
-        QLineF newline(*starting_point,*arrival_point);
-        QGraphicsLineItem* curr_line_item = this->scene()->addLine(newline,blackpen);
-      
-        
-        this->starting_lines.at(tmp) = curr_line_item;
-        tmp->arriving_lines.at(this) = curr_line_item;
-        
-    }
+    redraw_lines();
     
    // this->setSelected(false);
  
@@ -127,21 +96,23 @@ void ProvaRiquadro::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
 {
 
     std::cout << "mousereleeaseEvent"<<std::endl;
-
-    std::cerr<<"selected items are: "<<this->scene()->selectedItems().size()<<std::endl;
-    if(being_moved)
+    QGraphicsItem::mouseReleaseEvent(event);
+    //event->accept();
+    std::cout<<"selected items are: "<<this->scene()->selectedItems().size()<<std::endl;
+    if(being_moved || arrow_target)
     {
     this->setSelected(false);
-    std::cerr<<"selected items are: "<<this->scene()->selectedItems().size()<<std::endl;
+    std::cout<<"selected items are: "<<this->scene()->selectedItems().size()<<std::endl;
     being_moved = false;
+    arrow_target = false;
     }
     
-    QGraphicsItem::mouseReleaseEvent(event);
+    std::cout<<"release end"<<std::endl;
 }
 void ProvaRiquadro::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
 {
 QRectF rec = boundingRect();
-QBrush brush(Qt::gray);
+
 painter->fillRect(rec,brush);
 painter->drawRect(rec);
 }
@@ -181,3 +152,109 @@ void ProvaRiquadro::provaselected()
 QVariant ProvaRiquadro::itemChange(GraphicsItemChange change, const QVariant & value){
     text->setPos(rekt.center());
 }*/
+/*
+void ProvaRiquadro::update_lines(){
+    
+    
+        QPen blackpen = QPen(Qt::black);
+    for (std::map<ProvaRiquadro*,Arrow*>::iterator it = arriving_lines.begin(); it!= arriving_lines.end();++it)
+    {
+        //draw new line.
+        std::cout <<"bugseeker2"<<std::endl;
+        ProvaRiquadro* tmp = (*it).first;
+        tmp->scene()->removeItem(tmp->starting_lines.at(this)); 
+        QPointF* starting_point = new QPointF(tmp->x()+tmp->boundingRect().center().x(),
+                                             tmp->y()+tmp->boundingRect().bottom());
+        QPointF* arrival_point = new QPointF (this->x()+this->boundingRect().center().x(),
+                                             this->y()+this->boundingRect().top());
+        QLineF newline(*starting_point,*arrival_point);
+        QGraphicsLineItem* curr_line_item = this->scene()->addLine(newline,blackpen);
+      
+        
+        this->arriving_lines.at(tmp) = curr_line_item;
+        tmp->starting_lines.at(this) = curr_line_item;
+        
+    }
+    for (std::map<ProvaRiquadro*,Arrow*>::iterator it = starting_lines.begin(); it!= starting_lines.end();++it)
+    {
+        //draw new line.
+        std::cout <<"bugseeker3"<<std::endl;
+        ProvaRiquadro* tmp = (*it).first;
+        tmp->scene()->removeItem(tmp->arriving_lines.at(this)); 
+        QPointF* starting_point = new QPointF(tmp->x()+tmp->boundingRect().center().x(),
+                                             tmp->y()+tmp->boundingRect().bottom());
+        QPointF* arrival_point = new QPointF (this->x()+this->boundingRect().center().x(),
+                                             this->y()+this->boundingRect().top());
+        QLineF newline(*starting_point,*arrival_point);
+        QGraphicsLineItem* curr_line_item = this->scene()->addLine(newline,blackpen);
+      
+        
+        this->starting_lines.at(tmp) = curr_line_item;
+        tmp->arriving_lines.at(this) = curr_line_item;
+       
+    }
+}
+*/
+void ProvaRiquadro::setLayer(int i)
+{
+    switch (i)
+    {
+        case 0:
+        {
+            brush = QBrush(Qt::yellow);
+            break;
+        }
+        case 1:
+        {
+            brush = QBrush(Qt::magenta);
+            break;
+        }
+        case 2:
+        {
+            brush = QBrush(Qt::cyan);
+            break;
+        }
+        case 3:
+        {
+            brush = QBrush(Qt::blue);
+            break;
+        }
+        case 4:
+        {
+            brush = QBrush(Qt::green);
+            break;
+        }
+        default:
+        {
+            brush = QBrush(Qt::gray);
+            break;
+        }
+    }
+}
+void ProvaRiquadro::erase_lines()
+{
+
+}
+void ProvaRiquadro::redraw_lines()
+{
+    std::cout<<"enteer redraw lines function"<<std::endl;
+    for (std::map<ProvaRiquadro*,Arrow*>::iterator it = starting_lines.begin(); it!= starting_lines.end();++it)
+    {
+        Arrow* tmp = (*it).second;
+        std::cout<<"tmp assigned: "<<tmp<<std::endl;
+        tmp->update();
+    }
+      for (std::map<ProvaRiquadro*,Arrow*>::iterator it = arriving_lines.begin(); it!= arriving_lines.end();++it)
+    {
+        Arrow* tmp = (*it).second;
+        std::cout<<"tmp assigned: "<<tmp<<std::endl;
+        tmp->update();
+    }
+    
+    
+}
+void ProvaRiquadro::setArrowTarget()
+{
+    std::cout<<"target set"<<std::endl;
+    arrow_target=true;
+}

@@ -22,10 +22,9 @@ HandleItem::HandleItem( ProvaRiquadro *item, QGraphicsScene *scene, QColor color
  
   setFlag( ItemIsMovable );
   setFlag(ItemSendsGeometryChanges);
-  std::cout<<"handler created"<<std::endl;
-std::cout<<"scene is: "<<this->scene()->objectName().toStdString()<<std::endl;
-  
-std::cout<<"item is: "<<this->m_item->text->toPlainText().toStdString() <<std::endl;
+//  std::cout<<"handler created"<<std::endl;
+//  std::cout<<"scene is: "<<this->scene()->objectName().toStdString()<<std::endl;
+//  std::cout<<"item is: "<<this->m_item->text->toPlainText().toStdString() <<std::endl;
   
 }
  
@@ -101,93 +100,54 @@ QVariant HandleItem::itemChange( GraphicsItemChange change, const QVariant &data
     {
     case LeftHandle:
       {
-      // Prevent the rectangle from collapsing.
-      //if( fabs(movement.x()) <= 5 )
-      if(m_item->rect().width() < 5)
-        {
-        std::cout << "too small! " << std::endl;
-        return QGraphicsItem::itemChange( change, newData );
-        }
- 
       // Snap the movement to the X direction
       newData.setY(0);
- 
       movement = newData - pos();
       // Resize the rectangle
-      newRect.setLeft(m_item->rect().left() + movement.x());
- 
+//      std::cout<< "rect width is: "<<m_item->rect().width() <<" and text bounding rect width is: "<<m_item->text->boundingRect().width()<<std::endl;
+      m_item->rect().width() < m_item->text->boundingRect().width()+10?newRect.setLeft(m_item->rect().left()-1) :newRect.setLeft(m_item->rect().left() + movement.x());
       m_item->setRect(newRect);
  
       break;
       }
     case RightHandle:
       {
-      // Prevent the rectangle from collapsing.
-      //if( fabs(movement.x()) <= 5 )
-      //if(m_item->rect().width() < 5)
-      if(m_item->rect().width() + movement.x() < 5)
-        {
-        std::cout << "too small! " << std::endl;
-        return QGraphicsItem::itemChange( change, newData );
-        }
- 
-      // Snap the movement to the X direction
+       // Snap the movement to the X direction
       newData.setY(0);
- 
       movement = newData - pos();
       // Resize the rectangle
-      newRect.setRight(m_item->rect().right() + movement.x());
- 
+      m_item->rect().width() + movement.x() < m_item->text->boundingRect().width()+10?newRect.setRight(m_item->rect().right()+1) :newRect.setRight(m_item->rect().right() + movement.x());
       m_item->setRect(newRect);
- 
       break;
       }
     case TopHandle:
       {
-      // Prevent the rectangle from collapsing.
-      //if( fabs(movement.x()) <= 5 )
-      if(m_item->rect().height() < 5)
-        {
-        std::cout << "too small! " << std::endl;
-        return QGraphicsItem::itemChange( change, newData );
-        }
- 
       // Snap the movement to the Y direction
       newData.setX(0);
- 
       movement = newData - pos();
       // Resize the rectangle
-      newRect.setTop(m_item->rect().top() + movement.y());
- 
+      m_item->rect().height() < 20?newRect.setTop(m_item->rect().top() - 1):newRect.setTop(m_item->rect().top() + movement.y());
       m_item->setRect(newRect);
- 
       break;
       }
     case BottomHandle:
       {
-      // Prevent the rectangle from collapsing.
-      //if( fabs(movement.x()) <= 5 )
-      if(m_item->rect().height() < 5)
-        {
-        std::cout << "too small! " << std::endl;
-        return QGraphicsItem::itemChange( change, newData );
-        }
- 
-      // Snap the movement to the Y direction
+       // Snap the movement to the Y direction
       newData.setX(0);
- 
       movement = newData - pos();
-      // Resize the rectangle
-      newRect.setBottom(m_item->rect().bottom() + movement.y());
- 
+      // Resize the rectangle, preventing the collapse and the lock
+      m_item->rect().height() < 20?newRect.setBottom(m_item->rect().bottom() + 1):newRect.setBottom(m_item->rect().bottom() + movement.y());
       m_item->setRect(newRect);
  
       break;
       }
     } // end switch
     m_item->text->setPos(m_item->boundingRect().topLeft().x()+2,m_item->boundingRect().topLeft().y()+2);
-    std::cout<< "number of selected items in the end of item change: "<<this->scene()->selectedItems().size()<<std::endl;
+   // std::cout<< "number of selected items in the end of item change: "<<this->scene()->selectedItems().size()<<std::endl;
+    m_item->erase_lines();
+    m_item->redraw_lines();
     m_item->setSelected(false);
+    this->scene()->update(this->scene()->sceneRect());
     return QGraphicsItem::itemChange( change, newData);
   } // end if pressed
  
