@@ -34,9 +34,11 @@ public slots:
     void update_object();
     void update_object2();
     void finalize_line();
+    void delete_items();
 private:
    // std::list<ProvaRiquadro*> layer_1_buttons;
-    ProvaRiquadro* starting_object; 
+    ProvaRiquadro* starting_object;  //riusa come selected per la delete.
+    Arrow* selected_arrow;
     ProvaRiquadro* arrival_object;
     QGraphicsLineItem* curr_line_item;
     Ui::prova_widget *ui;
@@ -47,9 +49,10 @@ private:
     std::shared_ptr<ProvaPorte> porte;
     std::shared_ptr<PortSelect> ps;
     //PortSelect* ps;
-    bool doubleclick;
-    std::list<Arrow*> arrows;
+    
+    std::shared_ptr<std::map<QGraphicsLineItem*,Arrow*> >arrows;
     std::map<ProvaRiquadro*, L4_Data*> graphical_to_data;
+    
 public:
     explicit prova_widget(QWidget* parent = 0);
     ~prova_widget();

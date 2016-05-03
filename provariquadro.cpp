@@ -17,6 +17,17 @@ ProvaRiquadro::ProvaRiquadro()
     rekt = QRect (0,0,60,30);
     brush = QBrush(Qt::gray);
     arrow_target = false;
+    HandleItem *topHandle = new HandleItem( this, (this->scene()), Qt::red, HandleItem::TopHandle );
+    HandleItem *rightHandle = new HandleItem( this, this->scene(), Qt::red, HandleItem::RightHandle );
+    HandleItem *leftHandle = new HandleItem( this, this->scene(), Qt::red, HandleItem::LeftHandle );
+    HandleItem *bottomHandle = new HandleItem( this, this->scene(), Qt::red, HandleItem::BottomHandle );
+    HandleItem *centerHandle = new HandleItem( this, this->scene(), Qt::red, HandleItem::CenterHandle, QList<HandleItem*>() << topHandle << rightHandle << leftHandle << bottomHandle );
+    topHandle->setParentItem(this);
+    rightHandle->setParentItem(this);
+    leftHandle->setParentItem(this);
+    bottomHandle->setParentItem(this);
+    centerHandle->setParentItem(this);
+  
  //   this->scene()->addItem(topHandle);
     //QItemSelectionModel::selectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
    
@@ -48,16 +59,6 @@ void ProvaRiquadro::mousePressEvent(QGraphicsSceneMouseEvent* event)
 {
     std::cout << "mouseClickEvent("<<event->pos().x()<<","<<event->pos().y()<<")"<<std::endl;
     std::cout <<"rect top right is: "<<rect().topRight().x()<<","<<rect().topRight().y() << " and left bot is: "<<rect().bottomLeft().x()<<","<<rect().bottomLeft().y()<<std::endl;
-    HandleItem *topHandle = new HandleItem( this, (this->scene()), Qt::red, HandleItem::TopHandle );
-    HandleItem *rightHandle = new HandleItem( this, this->scene(), Qt::red, HandleItem::RightHandle );
-    HandleItem *leftHandle = new HandleItem( this, this->scene(), Qt::red, HandleItem::LeftHandle );
-    HandleItem *bottomHandle = new HandleItem( this, this->scene(), Qt::red, HandleItem::BottomHandle );
-    HandleItem *centerHandle = new HandleItem( this, this->scene(), Qt::red, HandleItem::CenterHandle, QList<HandleItem*>() << topHandle << rightHandle << leftHandle << bottomHandle );
-    topHandle->setParentItem(this);
-    rightHandle->setParentItem(this);
-    leftHandle->setParentItem(this);
-    bottomHandle->setParentItem(this);
-    centerHandle->setParentItem(this);
     this->setSelected(true);
     std::cout<<this->text->toPlainText().toStdString()<<std::endl;
     QPointF p = mapToScene(event->pos());

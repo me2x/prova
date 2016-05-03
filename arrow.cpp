@@ -4,8 +4,9 @@
 //CAVEAT: se rimuovo un riquadro devo fare in modo di gestire i nullptr va fatto o direttamente qua (if nullptr then go to source and destroy this in the list then destroy this) 
 //oppure (e credo sia meglio) nel momento in cui rimuovo un riquadro. dal momento che condividono un puntatore a this.
 
-Arrow::Arrow(ProvaRiquadro* from, ProvaRiquadro* to, int fromport, int toport)
+Arrow::Arrow(ProvaRiquadro* from, ProvaRiquadro* to, int fromport, int toport,std::shared_ptr<std::map<QGraphicsLineItem*,Arrow*> >arrows)
 {
+    this->arrows=arrows;
     arrival_point = to;
     std::cout<<"arrow update arrival point is: "<<arrival_point<<std::endl;
     start_point = from;
@@ -32,16 +33,19 @@ Arrow::Arrow(ProvaRiquadro* from, ProvaRiquadro* to, int fromport, int toport)
     std::cout<<"crash test: draw line"<<std::endl;
     sx_line = (to->scene()->addLine(tmp2,blackpen));
     
-    
+    line->setFlag(QGraphicsItem::ItemIsSelectable);
     label_start = new QGraphicsTextItem();
     label_start->setPos(starting_point->x()-(newline.dx()/2), starting_point->y()-newline.dy()+(2*newline.dy()/3)-5); //stessa y ottenuta cosi. 
     label_start->setPlainText(fromport!=0? QString::number(fromport): "");
     to->scene()->addItem(label_start);
-    
     label_stop = new QGraphicsTextItem();
     label_stop->setPos(arrival_point2->x()+(newline.dx()/2), arrival_point2->y()+(newline.dy()/3)-5);
     label_stop->setPlainText(toport!=0? QString::number(toport): "");
     to->scene()->addItem(label_stop);
+    std::cout<< "arrow to be inserted"<<std::endl;
+    std::cout << "sizw is: "<<arrows->size()<<std::endl;
+    arrows->insert(std::make_pair(line,this)); 
+    std::cout<< "arrow created"<<std::endl;
 }
 
 void Arrow::update()
@@ -53,6 +57,10 @@ void Arrow::update()
     scene->removeItem(line); 
     scene->removeItem(sx_line);
     scene->removeItem(dx_line);
+    arrows->erase(arrows->find(line));
+    delete line;
+    delete sx_line;
+    delete dx_line;
     std::cout<<"arrow update item removed"<<std::endl;
     QPen blackpen = QPen(Qt::black);
     QPointF* starting_point = new QPointF(start_point->x()+start_point->boundingRect().center().x(),start_point->y()+start_point->boundingRect().bottom());
@@ -70,6 +78,7 @@ void Arrow::update()
     QLineF tmp2(*arrival_point_point,arrowP2);
     std::cout<<"crash test: draw line"<<std::endl;
     sx_line = scene->addLine(tmp2,blackpen);
+    arrows->insert(std::make_pair(line, this));
     label_start->setPos(starting_point->x()-newline.dx()+(2*newline.dx()/3), starting_point->y()-newline.dy()+(2*newline.dy()/3)-5); //stessa y ottenuta cosi. 
     label_stop->setPos(arrival_point_point->x()+(newline.dx()/3), arrival_point_point->y()+(newline.dy()/3)-5);
 }

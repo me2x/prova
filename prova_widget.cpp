@@ -16,9 +16,9 @@ prova_widget::prova_widget(QWidget* parent): QWidget(parent), ui(new Ui::prova_w
     ui->graphicsView->setObjectName("graphicview");
     scene->setParent(ui->graphicsView);
     is_drawing = false;
-    starting_object = 0;
-    
-    
+    starting_object = nullptr;
+    selected_arrow = nullptr;
+    arrows.reset(new std::map<QGraphicsLineItem*,Arrow*>);
     
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()),this, SLOT(redraw_line()));
@@ -108,6 +108,7 @@ void prova_widget::create_L2_obj() //NTS sono praticamente uguali se non fosse p
      connect(temp,SIGNAL(riquadroCliccatoDx()),this,SLOT(break_line_drawing()));
      connect(temp,SIGNAL(riquadroDoubleClick()),this,SLOT(update_L2_object()));
      connect(scene,SIGNAL(selectionChanged()),temp,SLOT(provaselected()));
+     connect(ui->Delete_Button,SIGNAL(clicked()),this, SLOT(delete_items()));
      temp->text->setPlainText(QString::fromStdString(data->name));
      graphical_to_data.insert(std::make_pair(temp,data));
      std::cout<<scene->parent()->objectName().toStdString()<<std::endl;
@@ -131,14 +132,20 @@ void prova_widget::component_clicked()
         std::cout<<"item catched"<<std::endl;
         QPen blackpen = QPen(Qt::black);
         
-        while (item_tmp->type() != ProvaRiquadro::ProvaRiquadro_type) //qtextgraphicitem
+        if (item_tmp->type() != ProvaRiquadro::ProvaRiquadro_type) //qtextgraphicitem
         {
-            std::cout<<"item is text"<<std::endl;
+            std::cout<<"item is not riquadro"<<std::endl;
             QList<QGraphicsItem*> items;
             QPointF point = QPointF(p.x()-3, p.y()-3);
             items = scene->items(point, Qt::IntersectsItemShape,Qt::AscendingOrder,QTransform());
-            std::cout<<items.size()<<std::endl;
-            item_tmp = items.at(items.size()-2);
+            while (item_tmp->type() != ProvaRiquadro::ProvaRiquadro_type || items.size()!= 0)
+            {
+            std::cout<<"item is not riquadro size:"<<items.size()<<std::endl;
+            item_tmp = items.at(items.size()-1);
+            items.removeLast();
+            }
+            if (item_tmp->type() != ProvaRiquadro::ProvaRiquadro_type)
+                throw std::runtime_error("click su riquadro non trova oggetto");
         }
         ProvaRiquadro* item = qgraphicsitem_cast<ProvaRiquadro*>(item_tmp);
         std::cout<<"item is: "<<item<<std::endl;
@@ -225,18 +232,24 @@ void prova_widget::mousePressEvent(QMouseEvent* e)
     std::cout << "widget mouse press catched" << std::endl;
     //QWidget::mousePressEvent(e);
     if (e->button() == Qt::RightButton)
+    {
         break_line_drawing();
+        selected_arrow = 0;
+    }
     else
     {
         QPoint globpos = e->globalPos();
         QPoint p2 = ui->graphicsView->mapFromGlobal(globpos);
         QPointF p3 = ui->graphicsView->mapToScene(p2);
-        QRectF rect = QRectF(p3.x()-25,p3.y()-25,50,50);
+        QRectF rect = QRectF(p3.x()-5,p3.y()-5,10,10);
         QList<QGraphicsItem*> list =  scene->items(rect);
         std::cout<<"list size is: "<<list.size()<<std::endl;
         for (QList<QGraphicsItem*>::iterator it = list.begin(); it != list.end();++it)
         {
             std::cout<< "type is:" << (*it)->type()<<std::endl;
+            QGraphicsLineItem* item = qgraphicsitem_cast<QGraphicsLineItem*>(*it);
+            if (arrows->count(item) != 0)
+                selected_arrow = arrows->at(item);
         }
     }
 }
@@ -313,11 +326,46 @@ void prova_widget::update_object2(){
 
 void prova_widget::finalize_line(){
      std::pair<int,int> ports = ps->get_ports();
-     Arrow* a =new Arrow(starting_object,arrival_object,ports.first,ports.second);
-     arrows.push_back(a); 
+     std::cout<< "finalize_line"<<std::endl;
+     std::cout << "arrows size is: "<<arrows->size()<<std::endl;
+     Arrow* a =new Arrow(starting_object,arrival_object,ports.first,ports.second,arrows);
      starting_object->setSelected(false);
      arrival_object->setArrowTarget();
      starting_object = 0;
      arrival_object->setSelected(false);
      arrival_object = 0;
 }
+
+void prova_widget::delete_items()
+{
+    std::cout <<"enter delete item"<<std::endl;
+    std::cout <<"selected arrow is: "<<selected_arrow<<std::endl;
+    std::cout <<"and starting_object is: "<<starting_object<<std::endl;
+    
+    if (selected_arrow != 0 && selected_arrow != nullptr)
+    {
+        scene->removeItem(selected_arrow->dx_line);
+        scene->removeItem(selected_arrow->sx_line);
+        scene->removeItem(selected_arrow->line);
+        scene->removeItem(selected_arrow->label_start);
+        scene->removeItem(selected_arrow->label_stop);
+        Arrow* test = (*(selected_arrow->start_point->arriving_lines.find(selected_arrow->arrival_point))).second;
+        std::cout <<"test arrow is: "<<test<<std::endl;
+        ProvaRiquadro * test2 = (*(selected_arrow->start_point->arriving_lines.find(selected_arrow->arrival_point))).first;
+        std::cout <<"test riquadro is: "<<test2->text->toPlainText().toStdString()<<std::endl;
+        selected_arrow->start_point->arriving_lines.erase(selected_arrow->start_point->arriving_lines.find(selected_arrow->arrival_point));
+        selected_arrow->arrival_point->starting_lines.erase(selected_arrow->arrival_point->starting_lines.find(selected_arrow->start_point));
+        std::cout <<"erase end" <<std::endl;
+        selected_arrow = nullptr;
+    }
+    else if (starting_object != 0 && starting_object != nullptr)
+    {
+        std::cout <<"removing starting object"<<std::endl;
+        scene->removeItem(curr_line_item);
+        curr_line_item = nullptr;
+        is_drawing = false;
+        scene->removeItem(starting_object);
+        starting_object = nullptr;
+    }
+}
+

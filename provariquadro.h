@@ -8,6 +8,7 @@
 #include "handleitem.h"
 #include "arrow.h"
 //class Arrow;
+class HandleItem;
 class ProvaRiquadro : public QGraphicsObject
 {
     Q_OBJECT
@@ -50,7 +51,12 @@ protected:
     virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent* event);
     void advance();
 private:
-    QBrush brush;
+/* HandleItem* topHandle;
+    HandleItem* rightHandle;
+    HandleItem* leftHandle;
+    HandleItem* bottomHandle;
+    HandleItem* centerHandle;
+  */  QBrush brush;
     QRectF rekt;
     bool being_moved, arrow_target;
 };

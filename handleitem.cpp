@@ -105,7 +105,7 @@ QVariant HandleItem::itemChange( GraphicsItemChange change, const QVariant &data
       movement = newData - pos();
       // Resize the rectangle
 //      std::cout<< "rect width is: "<<m_item->rect().width() <<" and text bounding rect width is: "<<m_item->text->boundingRect().width()<<std::endl;
-      m_item->rect().width() < m_item->text->boundingRect().width()+10?newRect.setLeft(m_item->rect().left()-1) :newRect.setLeft(m_item->rect().left() + movement.x());
+      m_item->rect().width() < m_item->text->boundingRect().width()+20?newRect.setLeft(m_item->rect().left()-1) :newRect.setLeft(m_item->rect().left() + movement.x());
       m_item->setRect(newRect);
  
       break;
@@ -116,7 +116,7 @@ QVariant HandleItem::itemChange( GraphicsItemChange change, const QVariant &data
       newData.setY(0);
       movement = newData - pos();
       // Resize the rectangle
-      m_item->rect().width() + movement.x() < m_item->text->boundingRect().width()+10?newRect.setRight(m_item->rect().right()+1) :newRect.setRight(m_item->rect().right() + movement.x());
+      m_item->rect().width() + movement.x() < m_item->text->boundingRect().width()+20?newRect.setRight(m_item->rect().right()+1) :newRect.setRight(m_item->rect().right() + movement.x());
       m_item->setRect(newRect);
       break;
       }
@@ -126,7 +126,7 @@ QVariant HandleItem::itemChange( GraphicsItemChange change, const QVariant &data
       newData.setX(0);
       movement = newData - pos();
       // Resize the rectangle
-      m_item->rect().height() < 20?newRect.setTop(m_item->rect().top() - 1):newRect.setTop(m_item->rect().top() + movement.y());
+      m_item->rect().height() < 25?newRect.setTop(m_item->rect().top() - 1):newRect.setTop(m_item->rect().top() + movement.y());
       m_item->setRect(newRect);
       break;
       }
@@ -136,7 +136,7 @@ QVariant HandleItem::itemChange( GraphicsItemChange change, const QVariant &data
       newData.setX(0);
       movement = newData - pos();
       // Resize the rectangle, preventing the collapse and the lock
-      m_item->rect().height() < 20?newRect.setBottom(m_item->rect().bottom() + 1):newRect.setBottom(m_item->rect().bottom() + movement.y());
+      m_item->rect().height() < 25?newRect.setBottom(m_item->rect().bottom() + 1):newRect.setBottom(m_item->rect().bottom() + movement.y());
       m_item->setRect(newRect);
  
       break;
